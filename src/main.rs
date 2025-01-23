@@ -33,6 +33,7 @@ fn handle_client(mut stream: TcpStream) {
 
             let (status_line, content) = match &*request {
                 req if req.starts_with("OPTIONS") => (OK_RESPONSE.to_string(), "".to_string()),
+                req if req.starts_with("GET /") => handle_home_request(req),
                 _ => (NOT_FOUND_RESPONSE.to_string(), "404 not found".to_string())
             };
 
@@ -40,5 +41,10 @@ fn handle_client(mut stream: TcpStream) {
         }
         Err(e) => error!("Unable to read stream: {}", e)
     }
+}
+
+fn handle_home_request(request: &str) -> (String, String) {
+    println!("Request: {}", request);
+    (OK_RESPONSE.to_string(), "Welcome".to_string())
 }
 
