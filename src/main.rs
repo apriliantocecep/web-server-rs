@@ -1,12 +1,15 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use log::{error, info};
 
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE\r\nAccess-Control-Allow-Headers: Content-Type\r\n\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
 
 fn main() {
+    log4rs::init_file("log_config.yaml", Default::default()).unwrap();
+
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
-    println!("Server started at port :7878");
+    info!("Server started at port :7878");
 
     for stream in listener.incoming() {
         match stream {
@@ -14,7 +17,7 @@ fn main() {
                 handle_client(stream)
             }
             Err(e) => {
-                println!("Unable to connect: {}", e)
+                error!("Unable to connect: {}", e)
             }
         }
     }
@@ -35,7 +38,7 @@ fn handle_client(mut stream: TcpStream) {
 
             stream.write_all(format!("{}{}", status_line, content).as_bytes()).unwrap();
         }
-        Err(e) => eprintln!("Unable to read stream: {}", e)
+        Err(e) => error!("Unable to read stream: {}", e)
     }
 }
 
