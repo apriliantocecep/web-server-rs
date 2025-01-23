@@ -1,5 +1,8 @@
-use std::io::{Read};
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+
+const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE\r\nAccess-Control-Allow-Headers: Content-Type\r\n\r\n";
+const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
@@ -25,7 +28,12 @@ fn handle_client(mut stream: TcpStream) {
         Ok(size) => {
             request.push_str(String::from_utf8_lossy(&buffer[..size]).as_ref());
 
-            println!("{}", request);
+            let (status_line, content) = match &*request {
+                req if req.starts_with("OPTIONS") => (OK_RESPONSE.to_string(), "".to_string()),
+                _ => (NOT_FOUND_RESPONSE.to_string(), "404 not found".to_string())
+            };
+
+            stream.write_all(format!("{}{}", status_line, content).as_bytes()).unwrap();
         }
         Err(e) => eprintln!("Unable to read stream: {}", e)
     }
