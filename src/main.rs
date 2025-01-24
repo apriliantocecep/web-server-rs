@@ -1,5 +1,7 @@
-use std::io::{Read, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
+use std::thread;
+use std::time::Duration;
 use log::{error, info};
 use web_server::ThreadPool;
 
@@ -26,30 +28,32 @@ fn main() {
             }
         }
     }
+
+    println!("Shutting down.");
 }
 
 fn handle_client(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
-    let mut request = String::new();
+    let buf_reader = BufReader::new(&stream);
+    let request_line = buf_reader.lines().next().unwrap().unwrap();
 
-    match stream.read(&mut buffer) {
-        Ok(size) => {
-            request.push_str(String::from_utf8_lossy(&buffer[..size]).as_ref());
+    info!("{}", request_line);
 
-            let (status_line, content) = match &*request {
-                req if req.starts_with("OPTIONS") => (OK_RESPONSE.to_string(), "".to_string()),
-                req if req.starts_with("GET /") => handle_home_request(req),
-                _ => (NOT_FOUND_RESPONSE.to_string(), "404 not found".to_string())
-            };
+    let (status_line, content) = match &request_line[..] {
+        req if req.starts_with("OPTIONS") => (OK_RESPONSE.to_string(), "".to_string()),
+        req if req.starts_with("GET / HTTP/1.1") => handle_home_request(req),
+        req if req.starts_with("GET /users HTTP/1.1") => handle_users_request(req),
+        _ => (NOT_FOUND_RESPONSE.to_string(), "404 not found".to_string())
+    };
 
-            stream.write_all(format!("{}{}", status_line, content).as_bytes()).unwrap();
-        }
-        Err(e) => error!("Unable to read stream: {}", e)
-    }
+    stream.write_all(format!("{}{}", status_line, content).as_bytes()).unwrap();
 }
 
-fn handle_home_request(request: &str) -> (String, String) {
-    // println!("Request: {}", request);
+fn handle_users_request(_request: &str) -> (String, String) {
+    thread::sleep(Duration::from_secs(5));
+    (OK_RESPONSE.to_string(), "Get Users".to_string())
+}
+
+fn handle_home_request(_request: &str) -> (String, String) {
     (OK_RESPONSE.to_string(), "Welcome".to_string())
 }
 
