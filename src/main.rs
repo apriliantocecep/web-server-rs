@@ -2,7 +2,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::time::Duration;
-use log::{error, info};
+use log::{error, info, warn};
 use web_server::ThreadPool;
 
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE\r\nAccess-Control-Allow-Headers: Content-Type\r\n\r\n";
@@ -34,7 +34,17 @@ fn main() {
 
 fn handle_client(mut stream: TcpStream) {
     let buf_reader = BufReader::new(&stream);
-    let request_line = buf_reader.lines().next().unwrap().unwrap();
+    let request_line = match buf_reader.lines().next() {
+        Some(Ok(line)) => line,
+        Some(Err(e)) => {
+            error!("Failed to read line: {e}");
+            return
+        },
+        None => {
+            warn!("Client disconnected or sent no data");
+            return
+        }
+    };
 
     info!("{}", request_line);
 
