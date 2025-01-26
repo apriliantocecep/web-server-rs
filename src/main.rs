@@ -29,7 +29,7 @@ fn main() {
         }
     }
 
-    println!("Shutting down.");
+    info!("Shutting down.");
 }
 
 fn handle_client(mut stream: TcpStream) {
