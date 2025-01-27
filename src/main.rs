@@ -46,7 +46,15 @@ fn handle_client(mut stream: TcpStream) {
         }
     };
 
-    info!("{}", request_line);
+    let current = thread::current();
+    match current.name() {
+        None => {
+            info!("Executing on thread: {:?} for {}", current.id(), request_line)
+        }
+        Some(name) => {
+            info!("Executing on thread: {:?} for {}", name, request_line)
+        }
+    }
 
     let (status_line, content) = match &request_line[..] {
         req if req.starts_with("OPTIONS") => (OK_RESPONSE.to_string(), "".to_string()),
