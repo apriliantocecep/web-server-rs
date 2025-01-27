@@ -56,7 +56,8 @@ struct Worker {
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let thread = thread::spawn(move || loop {
+        let thread_factory = thread::Builder::new().name(format!("Worker-{}", id));
+        let thread = thread_factory.spawn(move || loop {
             let message = receiver.lock().unwrap().recv();
 
             match message {
@@ -69,7 +70,7 @@ impl Worker {
                     break;
                 }
             }
-        });
+        }).expect("Failed to create a new thread");
         Worker { id, thread: Some(thread) }
     }
 }
